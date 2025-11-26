@@ -1,257 +1,110 @@
 // server.js - Express Backend Server
+require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
-const fs = require('fs').promises;
-const path = require('path');
+const http = require('http');
+const socketIo = require('socket.io');
+const connectDB = require('./config/db');
+const errorHandler = require('./middleware/error');
+
+// Connect to database
+connectDB();
 
 const app = express();
+const server = http.createServer(app);
+const io = socketIo(server, {
+  cors: {
+    origin: process.env.CLIENT_URL || 'http://localhost:5173',
+    methods: ['GET', 'POST', 'PUT', 'DELETE']
+  }
+});
+
 const PORT = process.env.PORT || 5000;
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: process.env.CLIENT_URL || 'http://localhost:5173',
+  credentials: true
+}));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Orders database file path
-const ORDERS_FILE = path.join(__dirname, 'data', 'orders.json');
+// Make io accessible to routes
+app.use((req, res, next) => {
+  req.io = io;
+  next();
+});
 
-// Initialize data directory and orders file
-const initializeDatabase = async () => {
-  try {
-    await fs.mkdir(path.join(__dirname, 'data'), { recursive: true });
-    try {
-      await fs.access(ORDERS_FILE);
-    } catch {
-      await fs.writeFile(ORDERS_FILE, JSON.stringify([], null, 2));
-      console.log('Created orders.json file');
-    }
-  } catch (error) {
-    console.error('Error initializing database:', error);
-  }
-};
+// Make io accessible to routes
+app.use((req, res, next) => {
+  req.io = io;
+  next();
+});
 
-// Read orders from file
-const readOrders = async () => {
-  try {
-    const data = await fs.readFile(ORDERS_FILE, 'utf8');
-    return JSON.parse(data);
-  } catch (error) {
-    console.error('Error reading orders:', error);
-    return [];
-  }
-};
+// Import routes
+const authRoutes = require('./routes/auth');
+const menuRoutes = require('./routes/menu');
+const orderRoutes = require('./routes/orders');
+const reservationRoutes = require('./routes/reservations');
+const reviewRoutes = require('./routes/reviews');
+const newsletterRoutes = require('./routes/newsletter');
 
-// Write orders to file
-const writeOrders = async (orders) => {
-  try {
-    await fs.writeFile(ORDERS_FILE, JSON.stringify(orders, null, 2));
-    return true;
-  } catch (error) {
-    console.error('Error writing orders:', error);
-    return false;
-  }
-};
-
-// Routes
+// Mount routes
+app.use('/api/auth', authRoutes);
+app.use('/api/menu', menuRoutes);
+app.use('/api/orders', orderRoutes);
+app.use('/api/reservations', reservationRoutes);
+app.use('/api/reviews', reviewRoutes);
+app.use('/api/newsletter', newsletterRoutes);
 
 // Health check
 app.get('/', (req, res) => {
   res.json({ 
-    message: 'Restaurant API Server', 
+    message: '🍽️ Luxé Bistro API Server', 
     status: 'running',
+    version: '2.0.0',
     endpoints: {
+      auth: '/api/auth',
+      menu: '/api/menu',
       orders: '/api/orders',
-      placeOrder: 'POST /api/orders',
-      getOrder: 'GET /api/orders/:id'
+      reservations: '/api/reservations',
+      reviews: '/api/reviews',
+      newsletter: '/api/newsletter'
     }
   });
 });
 
-// Get all orders
-app.get('/api/orders', async (req, res) => {
-  try {
-    const orders = await readOrders();
-    res.json({ 
-      success: true, 
-      count: orders.length,
-      orders 
-    });
-  } catch (error) {
-    res.status(500).json({ 
-      success: false, 
-      message: 'Error fetching orders',
-      error: error.message 
-    });
-  }
-});
+// Error handler
+app.use(errorHandler);
 
-// Get single order by ID
-app.get('/api/orders/:id', async (req, res) => {
-  try {
-    const orders = await readOrders();
-    const order = orders.find(o => o.id === req.params.id);
-    
-    if (!order) {
-      return res.status(404).json({ 
-        success: false, 
-        message: 'Order not found' 
-      });
-    }
-    
-    res.json({ 
-      success: true, 
-      order 
-    });
-  } catch (error) {
-    res.status(500).json({ 
-      success: false, 
-      message: 'Error fetching order',
-      error: error.message 
-    });
-  }
-});
+// Socket.IO connection
+io.on('connection', (socket) => {
+  console.log('🔌 New client connected:', socket.id);
 
-// Create new order
-app.post('/api/orders', async (req, res) => {
-  try {
-    const { customer, items, total } = req.body;
-    
-    // Validation
-    if (!customer || !customer.name || !customer.email || !customer.phone || !customer.address) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Missing required customer information' 
-      });
-    }
-    
-    if (!items || items.length === 0) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Order must contain at least one item' 
-      });
-    }
-    
-    // Create new order
-    const newOrder = {
-      id: `ORD-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`,
-      customer,
-      items,
-      total: parseFloat(total),
-      status: 'pending',
-      createdAt: new Date().toISOString(),
-      updatedAt: new Date().toISOString()
-    };
-    
-    // Read existing orders and add new one
-    const orders = await readOrders();
-    orders.push(newOrder);
-    
-    // Save to file
-    const saved = await writeOrders(orders);
-    
-    if (!saved) {
-      throw new Error('Failed to save order');
-    }
-    
-    res.status(201).json({ 
-      success: true, 
-      message: 'Order placed successfully',
-      order: newOrder 
-    });
-  } catch (error) {
-    res.status(500).json({ 
-      success: false, 
-      message: 'Error creating order',
-      error: error.message 
-    });
-  }
-});
+  socket.on('joinOrderRoom', (orderId) => {
+    socket.join(`order-${orderId}`);
+    console.log(`Client ${socket.id} joined order room: order-${orderId}`);
+  });
 
-// Update order status
-app.patch('/api/orders/:id', async (req, res) => {
-  try {
-    const { status } = req.body;
-    const validStatuses = ['pending', 'preparing', 'ready', 'delivered', 'cancelled'];
-    
-    if (!validStatuses.includes(status)) {
-      return res.status(400).json({ 
-        success: false, 
-        message: 'Invalid status' 
-      });
-    }
-    
-    const orders = await readOrders();
-    const orderIndex = orders.findIndex(o => o.id === req.params.id);
-    
-    if (orderIndex === -1) {
-      return res.status(404).json({ 
-        success: false, 
-        message: 'Order not found' 
-      });
-    }
-    
-    orders[orderIndex].status = status;
-    orders[orderIndex].updatedAt = new Date().toISOString();
-    
-    const saved = await writeOrders(orders);
-    
-    if (!saved) {
-      throw new Error('Failed to update order');
-    }
-    
-    res.json({ 
-      success: true, 
-      message: 'Order updated successfully',
-      order: orders[orderIndex] 
-    });
-  } catch (error) {
-    res.status(500).json({ 
-      success: false, 
-      message: 'Error updating order',
-      error: error.message 
-    });
-  }
-});
-
-// Delete order
-app.delete('/api/orders/:id', async (req, res) => {
-  try {
-    const orders = await readOrders();
-    const filteredOrders = orders.filter(o => o.id !== req.params.id);
-    
-    if (orders.length === filteredOrders.length) {
-      return res.status(404).json({ 
-        success: false, 
-        message: 'Order not found' 
-      });
-    }
-    
-    const saved = await writeOrders(filteredOrders);
-    
-    if (!saved) {
-      throw new Error('Failed to delete order');
-    }
-    
-    res.json({ 
-      success: true, 
-      message: 'Order deleted successfully' 
-    });
-  } catch (error) {
-    res.status(500).json({ 
-      success: false, 
-      message: 'Error deleting order',
-      error: error.message 
-    });
-  }
+  socket.on('disconnect', () => {
+    console.log('🔌 Client disconnected:', socket.id);
+  });
 });
 
 // Start server
-const startServer = async () => {
-  await initializeDatabase();
-  app.listen(PORT, () => {
-    console.log(`🚀 Server running on http://localhost:${PORT}`);
-    console.log(`📝 Orders stored in: ${ORDERS_FILE}`);
-  });
-};
+server.listen(PORT, () => {
+  console.log(`
+╔═══════════════════════════════════════════╗
+║   🚀 Server running on port ${PORT}        ║
+║   📊 Environment: ${process.env.NODE_ENV || 'development'}           ║
+║   🌐 API: http://localhost:${PORT}        ║
+║   📡 WebSocket: Active                    ║
+╚═══════════════════════════════════════════╝
+  `);
+});
 
-startServer();
+// Handle unhandled promise rejections
+process.on('unhandledRejection', (err, promise) => {
+  console.log(`❌ Error: ${err.message}`);
+  server.close(() => process.exit(1));
+});
