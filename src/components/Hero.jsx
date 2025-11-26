@@ -23,7 +23,7 @@ const Hero = ({ scrollToSection }) => {
           </div>
           
           <div className="space-y-4">
-            <h1 className="text-5xl sm:text-6xl md:text-7xl lg:text-8xl font-bold leading-tight">
+            <h1 className="text-4xl sm:text-5xl md:text-6xl lg:text-7xl xl:text-8xl font-bold leading-tight">
               <span className="block mb-2">Experience</span>
               <span className="block bg-gradient-to-r from-purple-400 via-pink-400 to-orange-400 bg-clip-text text-transparent leading-relaxed">
                 Culinary Magic
@@ -31,40 +31,40 @@ const Hero = ({ scrollToSection }) => {
             </h1>
           </div>
           
-          <p className="text-lg sm:text-xl md:text-2xl text-gray-300 max-w-3xl mx-auto px-4">
+          <p className="text-base sm:text-lg md:text-xl lg:text-2xl text-gray-300 max-w-3xl mx-auto px-4">
             Where passion meets perfection. Indulge in our chef's masterpieces crafted with the finest ingredients.
           </p>
           
-          <div className="flex flex-wrap gap-4 sm:gap-6 justify-center pt-8">
+          <div className="flex flex-wrap gap-3 sm:gap-4 md:gap-6 justify-center pt-8">
             <button
               onClick={() => scrollToSection('menu')}
-              className="group relative px-8 sm:px-10 py-4 sm:py-5 bg-gradient-to-r from-purple-600 to-orange-600 rounded-full font-bold text-base sm:text-lg overflow-hidden shadow-lg hover:shadow-purple-500/50 transition-all"
+              className="group relative px-6 sm:px-8 md:px-10 py-3 sm:py-4 md:py-5 bg-gradient-to-r from-purple-600 to-orange-600 rounded-full font-bold text-sm sm:text-base md:text-lg overflow-hidden shadow-lg hover:shadow-purple-500/50 transition-all"
             >
               <span className="relative z-10">Explore Menu</span>
               <div className="absolute inset-0 bg-gradient-to-r from-orange-600 to-purple-600 opacity-0 group-hover:opacity-100 transition-opacity"></div>
             </button>
             <button
               onClick={() => scrollToSection('order')}
-              className="px-8 sm:px-10 py-4 sm:py-5 bg-white/5 backdrop-blur-sm border-2 border-white/20 rounded-full font-bold text-base sm:text-lg hover:bg-white/10 hover:border-purple-500/50 transition-all shadow-lg"
+              className="px-6 sm:px-8 md:px-10 py-3 sm:py-4 md:py-5 bg-white/5 backdrop-blur-sm border-2 border-white/20 rounded-full font-bold text-sm sm:text-base md:text-lg hover:bg-white/10 hover:border-purple-500/50 transition-all shadow-lg"
             >
               Order Now
             </button>
           </div>
 
-          <div className="grid grid-cols-3 gap-4 sm:gap-8 max-w-2xl mx-auto pt-16 px-4">
+          <div className="grid grid-cols-3 gap-2 sm:gap-4 md:gap-8 max-w-2xl mx-auto pt-16 px-4">
             {[
               { icon: ChefHat, label: 'Expert Chefs', value: '15+' },
               { icon: Star, label: 'Signature Dishes', value: '50+' },
               { icon: Clock, label: 'Years Experience', value: '20+' }
             ].map((stat, i) => (
               <div key={i} className="text-center">
-                <div className="inline-flex items-center justify-center w-12 h-12 sm:w-16 sm:h-16 bg-gradient-to-br from-purple-500/20 to-orange-500/20 rounded-full mb-3">
-                  <stat.icon className="text-purple-400" size={24} />
+                <div className="inline-flex items-center justify-center w-10 h-10 sm:w-12 sm:h-12 md:w-16 md:h-16 bg-gradient-to-br from-purple-500/20 to-orange-500/20 rounded-full mb-2 sm:mb-3">
+                  <stat.icon className="text-purple-400" size={18} />
                 </div>
-                <div className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-purple-400 to-orange-400 bg-clip-text text-transparent">
+                <div className="text-lg sm:text-2xl md:text-3xl font-bold bg-gradient-to-r from-purple-400 to-orange-400 bg-clip-text text-transparent">
                   {stat.value}
                 </div>
-                <div className="text-xs sm:text-sm text-gray-400 mt-1">{stat.label}</div>
+                <div className="text-[10px] sm:text-xs md:text-sm text-gray-400 mt-1">{stat.label}</div>
               </div>
             ))}
           </div>

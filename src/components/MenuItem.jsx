@@ -24,23 +24,23 @@ const MenuItem = ({ item, addToCart }) => {
         </div>
       </div>
 
-      <div className="relative p-6">
-        <h3 className="text-2xl font-bold mb-2 group-hover:text-purple-400 transition-colors">
+      <div className="relative p-4 sm:p-6">
+        <h3 className="text-lg sm:text-xl md:text-2xl font-bold mb-2 group-hover:text-purple-400 transition-colors">
           {item.name}
         </h3>
-        <p className="text-gray-400 text-sm mb-6 line-clamp-2 leading-relaxed">
+        <p className="text-gray-400 text-xs sm:text-sm mb-4 sm:mb-6 line-clamp-2 leading-relaxed">
           {item.description}
         </p>
         
         <div className="flex justify-between items-center">
-          <div className="text-3xl font-bold bg-gradient-to-r from-purple-400 to-orange-400 bg-clip-text text-transparent">
+          <div className="text-2xl sm:text-3xl font-bold bg-gradient-to-r from-purple-400 to-orange-400 bg-clip-text text-transparent">
             ${item.price}
           </div>
           <button
             onClick={() => addToCart(item)}
-            className="flex items-center gap-2 px-6 py-3 bg-gradient-to-r from-purple-600 to-orange-600 rounded-full font-semibold hover:shadow-lg hover:shadow-purple-500/50 transition-all transform hover:scale-105 active:scale-95"
+            className="flex items-center gap-1 sm:gap-2 px-4 sm:px-6 py-2 sm:py-3 bg-gradient-to-r from-purple-600 to-orange-600 rounded-full text-sm sm:text-base font-semibold hover:shadow-lg hover:shadow-purple-500/50 transition-all transform hover:scale-105 active:scale-95"
           >
-            <Plus size={18} />
+            <Plus size={16} />
             <span>Add</span>
           </button>
         </div>
